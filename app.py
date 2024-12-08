@@ -3,6 +3,7 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import time
+import re
 
 # ワーカー情報の取得関数
 def scrape_worker_profiles(base_url_list):
@@ -10,10 +11,12 @@ def scrape_worker_profiles(base_url_list):
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
     excluded_ages = ["50代後半", "60代前半", "60代後半", "70代前半"]
+    
+    # 除外するアクセス期間（正規表現対応）
     excluded_access_periods = [
-        "10ヶ月前", "11ヶ月前", "12ヶ月前",
-        "1年前", "2年前", "3年前",
-        "4年前", "5年前", "6年前"
+        r"1年.*前",   # 1年前、1年弱前、1年強前
+        r"2年.*前",   # 2年前、2年弱前、2年強前
+        r"10ヶ月.*前" # 10ヶ月前
     ]
     excluded_work_hours = ["10時間以下"]  # 新たに追加された除外条件
     profile_set = set()
@@ -64,11 +67,11 @@ def scrape_worker_profiles(base_url_list):
                     if attributes and any(age in attributes.text for age in excluded_ages):
                         continue
 
-                    # 最終アクセス条件の除外
+                    # 最終アクセス条件の除外（正規表現マッチ）
                     last_activity = profile_soup.find('p', class_='last_activity')
                     if last_activity:
                         access_date = last_activity.text.replace('最終アクセス: ', '').strip()
-                        if any(period in access_date for period in excluded_access_periods):
+                        if any(re.search(period, access_date) for period in excluded_access_periods):
                             continue
 
                     # 稼働可能時間条件の除外
