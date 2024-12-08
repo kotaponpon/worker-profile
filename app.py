@@ -15,6 +15,7 @@ def scrape_worker_profiles(base_url_list):
         "1年前", "2年前", "3年前",
         "4年前", "5年前", "6年前"
     ]
+    excluded_work_hours = ["10時間以下"]  # 新たに追加された除外条件
     profile_set = set()
 
     for base_url in base_url_list:
@@ -58,13 +59,23 @@ def scrape_worker_profiles(base_url_list):
                     if not_found_message:
                         continue
 
+                    # 年齢条件の除外
                     attributes = profile_soup.find('p', class_='attributes')
                     if attributes and any(age in attributes.text for age in excluded_ages):
                         continue
+
+                    # 最終アクセス条件の除外
                     last_activity = profile_soup.find('p', class_='last_activity')
                     if last_activity:
                         access_date = last_activity.text.replace('最終アクセス: ', '').strip()
                         if any(period in access_date for period in excluded_access_periods):
+                            continue
+
+                    # 稼働可能時間条件の除外
+                    work_hours_label = profile_soup.find('dt', text="稼働可能\n時間/週")
+                    if work_hours_label:
+                        work_hours = work_hours_label.find_next('dd').text.strip()
+                        if any(hours in work_hours for hours in excluded_work_hours):
                             continue
 
                     profile_set.add(profile_url)
