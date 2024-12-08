@@ -112,14 +112,7 @@ if st.button("開始"):
             result_text = "\n".join(results)
             st.text_area("条件に合致したプロフィールURL一覧", result_text, height=200)
 
-            # クリップボードにコピーするボタン（JavaScriptを利用）
-            st.markdown(
-                f"""
-                <button onclick="navigator.clipboard.writeText(`{result_text}`)" style="background-color:#4CAF50;color:white;padding:10px 15px;border:none;border-radius:5px;cursor:pointer;">
-                    クリップボードにコピー
-                </button>
-                """,
-                unsafe_allow_html=True
-            )
+            # ダウンロードボタン
+            st.download_button("ダウンロード", data=result_text, file_name="profiles.txt", mime="text/plain")
         else:
             st.error("条件に合致するプロフィールURLが見つかりませんでした。")
