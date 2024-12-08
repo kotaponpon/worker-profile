@@ -109,9 +109,9 @@ if st.button("開始"):
         results = scrape_worker_profiles(st.session_state.url_list)
         if results:
             st.success(f"条件に合致したプロフィールURL数: {len(results)}")
-            # 結果を表示
+            # 結果を表示（編集不可）
             result_text = "\n".join(results)
-            st.text_area("条件に合致したプロフィールURL一覧", result_text, height=200)
+            st.code(result_text, language="text")  # 編集不可の結果表示
 
             # ダウンロードボタン
             st.download_button("ダウンロード", data=result_text, file_name="profiles.txt", mime="text/plain")
