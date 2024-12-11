@@ -3,21 +3,37 @@ import requests
 from bs4 import BeautifulSoup
 import json
 import time
+import re
 
 # ワーカー情報の取得関数
 def scrape_worker_profiles(base_url_list):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
-    excluded_ages = ["50代前半", "50代後半", "60代前半", "60代後半", "70代前半"]
-    
-    # 除外するアクセス期間
-    excluded_access_periods = [
-        "1年前", "2年前", "3年前", "4年前", "5年前", "6年前", "7年前", "8年前",
-        "10ヶ月前", "11ヶ月前", "12ヶ月前"
-    ]
-    excluded_work_hours = ["10時間以下"]  # 稼働可能時間の除外条件
     profile_set = set()
+
+    # 除外する年齢条件
+    excluded_ages = [
+        "40代後半", "50代前半", "50代後半",
+        "60代前半", "60代後半", "70代前半", "70代後半",
+        "80代前半", "80代後半", "90代前半", "90代後半"
+    ]
+
+    # 除外する最終アクセス条件（正規表現で対応）
+    excluded_access_periods = [
+        r"[1-9]ヶ月前",             # 1ヶ月前〜9ヶ月前
+        r"1[0-2]ヶ月前",           # 10ヶ月前〜12ヶ月前
+        r"1年.*前",                # 1年前、1年弱前、1年強前
+        r"2年.*前",                # 2年前、2年弱前、2年強前
+        r"3年.*前",                # 3年前、3年弱前、3年強前
+        r"4年.*前",                # 4年前、4年弱前、4年強前
+        r"5年.*前",                # 5年前、5年弱前、5年強前
+        r"6年.*前",                # 6年前、6年弱前、6年強前
+        r"7年.*前",                # 7年前、7年弱前、7年強前
+        r"8年.*前",                # 8年前、8年弱前、8年強前
+        r"9年.*前",                # 9年前、9年弱前、9年強前
+        r"1[0-2]年.*前"           # 10年前〜12年前
+    ]
 
     for base_url in base_url_list:
         page = 1
@@ -62,21 +78,17 @@ def scrape_worker_profiles(base_url_list):
 
                     # 年齢条件の除外
                     attributes = profile_soup.find('p', class_='attributes')
-                    if attributes and any(age in attributes.text for age in excluded_ages):
-                        continue
+                    if attributes:
+                        age_text = attributes.text.strip()
+                        if any(age in age_text for age in excluded_ages):
+                            continue
 
                     # 最終アクセス条件の除外
                     last_activity = profile_soup.find('p', class_='last_activity')
                     if last_activity:
                         access_date = last_activity.text.replace('最終アクセス: ', '').strip()
-                        if any(period in access_date for period in excluded_access_periods):
-                            continue
-
-                    # 稼働可能時間条件の除外
-                    work_hours_label = profile_soup.find('dt', text=lambda x: x and "稼働可能" in x)
-                    if work_hours_label:
-                        work_hours = work_hours_label.find_next('dd').text.strip()
-                        if "10時間以下" in work_hours:
+                        # 正規表現で一致する場合に除外
+                        if any(re.search(period, access_date) for period in excluded_access_periods):
                             continue
 
                     profile_set.add(profile_url)
